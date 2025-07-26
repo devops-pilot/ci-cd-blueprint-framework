@@ -1,0 +1,7 @@
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Package Artifact
+        run: mvn package
+

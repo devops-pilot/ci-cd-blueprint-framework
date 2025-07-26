@@ -1,0 +1,7 @@
+  lint:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Linter
+        run: mvn checkstyle:check
+
