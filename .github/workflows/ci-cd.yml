@@ -8,22 +8,26 @@ jobs:
     name: read-blueprint
     runs-on: ubuntu-latest
     outputs:
-      language: ${{ steps.detect.outputs.language }}
+      java: ${{ steps.detect.outputs.java }}
+      node: ${{ steps.detect.outputs.node }}
+      python: ${{ steps.detect.outputs.python }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Detect language
+      - name: Detect languages
         id: detect
         run: |
           if [ -f "./orders-service/pom.xml" ]; then
-            echo "language=java" >> $GITHUB_OUTPUT
-          elif [ -f "./orders-service/package.json" ]; then
-            echo "language=node" >> $GITHUB_OUTPUT
-          elif [ -f "./orders-service/main.py" ]; then
-            echo "language=python" >> $GITHUB_OUTPUT
-          else
-            echo "language=unknown" >> $GITHUB_OUTPUT
+            echo "java=true" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -f "./products-service/package.json" ]; then
+            echo "node=true" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -f "./users-service/requirements.txt" ]; then
+            echo "python=true" >> $GITHUB_OUTPUT
           fi
 
   # -------------------------
@@ -32,12 +36,11 @@ jobs:
   java-lint:
     name: java-ci / lint
     needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.language == 'java' }}
+    if: ${{ needs.read-blueprint.outputs.java == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Lint Java
-        run: echo "Running Java lint"
+      - run: echo "Lint Java"
 
   java-test:
     name: java-ci / test
@@ -45,8 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Test Java
-        run: echo "Running Java tests"
+      - run: echo "Test Java"
 
   java-build:
     name: java-ci / build
@@ -54,8 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build Java
-        run: |
+      - run: |
           cd orders-service
           mvn package
 
@@ -65,8 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy Java
-        run: echo "Deploying Java service"
+      - run: echo "Deploy Java"
 
   # -------------------------
   # Node.js CI
@@ -74,13 +74,12 @@ jobs:
   node-lint:
     name: node-ci / lint
     needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.language == 'node' }}
+    if: ${{ needs.read-blueprint.outputs.node == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Node Lint
-        run: |
-          cd orders-service
+      - run: |
+          cd products-service
           npm ci
           npm run lint || echo "Lint warnings"
 
@@ -90,9 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Node Test
-        run: |
-          cd orders-service
+      - run: |
+          cd products-service
           npm test
 
   node-build:
@@ -101,9 +99,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Node Build
-        run: |
-          cd orders-service
+      - run: |
+          cd products-service
           npm run build
 
   node-deploy:
@@ -112,8 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy Node.js
-        run: echo "Deploying Node.js service"
+      - run: echo "Deploy Node.js"
 
   # -------------------------
   # Python CI
@@ -121,15 +117,14 @@ jobs:
   python-lint:
     name: python-ci / lint
     needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.language == 'python' }}
+    if: ${{ needs.read-blueprint.outputs.python == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Python Lint
-        run: |
+      - run: |
           pip install flake8
-          cd orders-service
-          flake8 main.py || echo "Lint issues"
+          cd users-service
+          flake8 . || echo "Lint issues"
 
   python-test:
     name: python-ci / test
@@ -137,9 +132,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Python Test
-        run: |
-          cd orders-service
+      - run: |
+          cd users-service
           echo "Run tests here (e.g. pytest)"
 
   python-build:
@@ -148,10 +142,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Python Build
-        run: |
-          cd orders-service
-          python -m py_compile main.py
+      - run: |
+          cd users-service
+          python -m py_compile *.py
 
   python-deploy:
     name: python-ci / deploy
@@ -159,5 +152,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy Python
-        run: echo "Deploying Python service"
+      - run: echo "Deploy Python"
