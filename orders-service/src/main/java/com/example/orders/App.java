@@ -2,7 +2,7 @@ package com.example.orders;
 
 public class App {
     public String status() {
-        return "Orders Service is up!";
+        return "Orders Service is up and running!";
     }
 
     public static void main(String[] args) {
