@@ -1,0 +1,15 @@
+- name: Read blueprint config
+  id: vars
+  run: |
+    echo "language=$(yq .language project-blueprint.yaml)" >> $GITHUB_OUTPUT
+    echo "build_tool=$(yq .build_tool project-blueprint.yaml)" >> $GITHUB_OUTPUT
+    echo "deployment=$(yq .deployment project-blueprint.yaml)" >> $GITHUB_OUTPUT
+
+- name: Run Java Workflow
+  if: steps.vars.outputs.language == 'java'
+  uses: ./.github/workflows/java-ci.yml
+
+- name: Run Python Workflow
+  if: steps.vars.outputs.language == 'python'
+  uses: ./.github/workflows/python-ci.yml
+
