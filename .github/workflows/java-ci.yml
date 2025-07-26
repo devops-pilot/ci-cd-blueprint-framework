@@ -1,22 +1,58 @@
-name: Java CI
+name: Java CI Workflow
 
 on:
   workflow_call:
 
 jobs:
-  java-build:
+  lint:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Java Code Style Check (Placeholder)
+        run: echo "Run your Java linter here"
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with Maven
-        run:  mvn clean install
+      - name: Run Unit Tests
+        run: mvn test
         working-directory: ./orders-service
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Package JAR
+        run: mvn package
+        working-directory: ./orders-service
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy with Terraform (placeholder)
+        run: echo "Run Terraform deploy commands here"
