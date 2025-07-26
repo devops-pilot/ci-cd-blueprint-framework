@@ -8,6 +8,7 @@ on:
       - '**/*.py'
       - '**/*.js'
       - '.github/workflows/**'
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   read-blueprint:
@@ -21,16 +22,16 @@ jobs:
       - name: Install yq and extract blueprint info
         id: extract
         run: |
-          YQ_VERSION=v4.40.5
+          YQ_VERSION="v4.40.5"
           sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
-
+          
           FILE=$(find . -type f -name project-blueprint.yaml | head -n 1)
           echo "Found blueprint: $FILE"
-
           echo "blueprint_path=$FILE" >> $GITHUB_OUTPUT
 
           LANG=$(yq e '.language' "$FILE")
+          echo "language=$LANG"
           echo "language=$LANG" >> $GITHUB_OUTPUT
 
   java-ci:
