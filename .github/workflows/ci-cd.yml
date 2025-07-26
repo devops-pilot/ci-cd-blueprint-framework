@@ -26,9 +26,9 @@ jobs:
             echo "language=unknown" >> $GITHUB_OUTPUT
           fi
 
-  # ====================
-  # Java Pipeline
-  # ====================
+  # -------------------------
+  # Java CI
+  # -------------------------
   java-lint:
     name: java-ci / lint
     needs: read-blueprint
@@ -68,33 +68,96 @@ jobs:
       - name: Deploy Java
         run: echo "Deploying Java service"
 
-  # ====================
-  # Node.js Pipeline
-  # ====================
-  node-build:
-    name: node-ci / node-build
+  # -------------------------
+  # Node.js CI
+  # -------------------------
+  node-lint:
+    name: node-ci / lint
     needs: read-blueprint
     if: ${{ needs.read-blueprint.outputs.language == 'node' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Node install and build
+      - name: Node Lint
         run: |
           cd orders-service
           npm ci
+          npm run lint || echo "Lint warnings"
+
+  node-test:
+    name: node-ci / test
+    needs: node-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node Test
+        run: |
+          cd orders-service
+          npm test
+
+  node-build:
+    name: node-ci / build
+    needs: node-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node Build
+        run: |
+          cd orders-service
           npm run build
 
-  # ====================
-  # Python Pipeline
-  # ====================
-  python-build:
-    name: python-ci / python-build
+  node-deploy:
+    name: node-ci / deploy
+    needs: node-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy Node.js
+        run: echo "Deploying Node.js service"
+
+  # -------------------------
+  # Python CI
+  # -------------------------
+  python-lint:
+    name: python-ci / lint
     needs: read-blueprint
     if: ${{ needs.read-blueprint.outputs.language == 'python' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Python build and check
+      - name: Python Lint
+        run: |
+          pip install flake8
+          cd orders-service
+          flake8 main.py || echo "Lint issues"
+
+  python-test:
+    name: python-ci / test
+    needs: python-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python Test
+        run: |
+          cd orders-service
+          echo "Run tests here (e.g. pytest)"
+
+  python-build:
+    name: python-ci / build
+    needs: python-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python Build
         run: |
           cd orders-service
           python -m py_compile main.py
+
+  python-deploy:
+    name: python-ci / deploy
+    needs: python-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy Python
+        run: echo "Deploying Python service"
