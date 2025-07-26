@@ -1,1 +1,2 @@
 # Just an empty one for now or add `pytest`
+pytest
