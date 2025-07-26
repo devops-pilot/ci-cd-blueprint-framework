@@ -30,7 +30,6 @@ jobs:
           distribution: 'temurin'
 
       - name: Run Unit Tests
-        working-directory: ./orders-service
         run: mvn test
 
   build:
