@@ -1,0 +1,11 @@
+{
+  "name": "products-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "lint": "echo 'Linting...' && exit 0",
+    "test": "echo 'Running tests...' && exit 0",
+    "build": "echo 'Building...' && exit 0"
+  }
+}
+
