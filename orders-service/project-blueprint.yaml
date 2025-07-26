@@ -1,0 +1,11 @@
+project_name: orders-service
+language: java
+build_type: maven
+deployment: terraform
+branching: semantic-versioning
+
+stages:
+  - lint
+  - test
+  - build
+  - deploy
