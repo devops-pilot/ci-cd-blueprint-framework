@@ -1,155 +1,21 @@
-name: CI Pipeline
+name: CI Dispatcher
 
 on:
   push:
+    paths:
+      - 'orders-service/**'
+      - 'products-service/**'
+      - 'recommendations-service/**'
 
 jobs:
-  read-blueprint:
-    name: read-blueprint
-    runs-on: ubuntu-latest
-    outputs:
-      java: ${{ steps.detect.outputs.java }}
-      node: ${{ steps.detect.outputs.node }}
-      python: ${{ steps.detect.outputs.python }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  java-ci:
+    if: contains(github.event.head_commit.message, 'orders-service') || github.event_name == 'push' && github.event.commits.*.modified.* contains 'orders-service/'
+    uses: ./.github/workflows/java-ci.yaml
 
-      - name: Detect languages
-        id: detect
-        run: |
-          if [ -f "./orders-service/pom.xml" ]; then
-            echo "java=true" >> $GITHUB_OUTPUT
-          fi
+  node-ci:
+    if: contains(github.event.head_commit.message, 'products-service') || github.event_name == 'push' && github.event.commits.*.modified.* contains 'products-service/'
+    uses: ./.github/workflows/node-ci.yaml
 
-          if [ -f "./products-service/package.json" ]; then
-            echo "node=true" >> $GITHUB_OUTPUT
-          fi
-
-          if [ -f "./users-service/requirements.txt" ]; then
-            echo "python=true" >> $GITHUB_OUTPUT
-          fi
-
-  # -------------------------
-  # Java CI
-  # -------------------------
-  java-lint:
-    name: java-ci / lint
-    needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.java == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Lint Java"
-
-  java-test:
-    name: java-ci / test
-    needs: java-lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Test Java"
-
-  java-build:
-    name: java-ci / build
-    needs: java-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd orders-service
-          mvn package
-
-  java-deploy:
-    name: java-ci / deploy
-    needs: java-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Deploy Java"
-
-  # -------------------------
-  # Node.js CI
-  # -------------------------
-  node-lint:
-    name: node-ci / lint
-    needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.node == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd products-service
-          npm ci
-          npm run lint || echo "Lint warnings"
-
-  node-test:
-    name: node-ci / test
-    needs: node-lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd products-service
-          npm test
-
-  node-build:
-    name: node-ci / build
-    needs: node-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd products-service
-          npm run build
-
-  node-deploy:
-    name: node-ci / deploy
-    needs: node-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Deploy Node.js"
-
-  # -------------------------
-  # Python CI
-  # -------------------------
-  python-lint:
-    name: python-ci / lint
-    needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.python == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          pip install flake8
-          cd users-service
-          flake8 . || echo "Lint issues"
-
-  python-test:
-    name: python-ci / test
-    needs: python-lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd users-service
-          echo "Run tests here (e.g. pytest)"
-
-  python-build:
-    name: python-ci / build
-    needs: python-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          cd users-service
-          python -m py_compile *.py
-
-  python-deploy:
-    name: python-ci / deploy
-    needs: python-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Deploy Python"
+  python-ci:
+    if: contains(github.event.head_commit.message, 'recommendations-service') || github.event_name == 'push' && github.event.commits.*.modified.* contains 'recommendations-service/'
+    uses: ./.github/workflows/python-ci.yaml
