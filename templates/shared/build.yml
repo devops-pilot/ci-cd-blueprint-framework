@@ -1,7 +1,16 @@
   build:
-    needs: test
     runs-on: ubuntu-latest
+    needs: test
     steps:
-      - name: Package Artifact
-        run: mvn package
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build the App
+        run: mvn clean package -DskipTests
 
