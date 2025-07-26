@@ -4,37 +4,47 @@ on:
   push:
     paths:
       - '**/project-blueprint.yaml'
-      - '**/src/**'
       - '**/*.java'
       - '**/*.py'
       - '**/*.js'
-  workflow_dispatch:
+      - '.github/workflows/**'
 
 jobs:
   read-blueprint:
     runs-on: ubuntu-latest
     outputs:
-      language: ${{ steps.vars.outputs.language }}
+      language: ${{ steps.extract.outputs.language }}
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find project blueprint file
+        id: extract
+        run: |
+          FILE=$(find . -type f -name project-blueprint.yaml | head -n 1)
+          echo "Found blueprint: $FILE"
+          echo "blueprint_path=$FILE" >> $GITHUB_OUTPUT
+          LANG=$(yq e '.language' "$FILE")
+          echo "language=$LANG" >> $GITHUB_OUTPUT
+        env:
+          YQ_VERSION: v4.40.5
 
       - name: Install yq
         run: |
-          sudo apt-get update && sudo apt-get install -y yq
+          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
-      - name: Detect service directory
-        id: service
-        run: |
-          service_dir=$(find . -name "project-blueprint.yaml" -exec dirname {} \;)
-          echo "service_dir=$service_dir" >> $GITHUB_OUTPUT
-
-      - name: Read blueprint config
-        id: vars
-        run: |
-          cd ${{ steps.service.outputs.service_dir }}
-          echo "language=$(yq e '.language' project-blueprint.yaml)" >> $GITHUB_OUTPUT
-
-  dispatch:
+  java-ci:
     needs: read-blueprint
-    uses: ./.github/workflows/${{ needs.read-blueprint.outputs.language }}-ci.yml
+    if: ${{ needs.read-blueprint.outputs.language == 'java' }}
+    uses: ./.github/workflows/java-ci.yml
+
+  python-ci:
+    needs: read-blueprint
+    if: ${{ needs.read-blueprint.outputs.language == 'python' }}
+    uses: ./.github/workflows/python-ci.yml
+
+  node-ci:
+    needs: read-blueprint
+    if: ${{ needs.read-blueprint.outputs.language == 'node' }}
+    uses: ./.github/workflows/node-ci.yml
