@@ -15,8 +15,8 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Lint check (example - spotbugs/maven plugin or style)
-        run: echo "Run linter here" # Replace with actual linter if needed
+      - name: Lint check (placeholder)
+        run: echo "Linting Java source (placeholder)"
 
   test:
     runs-on: ubuntu-latest
@@ -31,7 +31,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: mvn test
 
   build:
@@ -47,7 +47,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build Project
+      - name: Build the App
         run: mvn clean package -DskipTests
 
   deploy:
