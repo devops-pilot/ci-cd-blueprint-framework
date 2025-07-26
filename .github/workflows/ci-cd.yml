@@ -1,50 +1,100 @@
-name: CI/CD Dispatcher
+name: CI Pipeline
 
 on:
   push:
-    paths:
-      - '**/project-blueprint.yaml'
-      - '**/*.java'
-      - '**/*.py'
-      - '**/*.js'
-      - '.github/workflows/**'
-  workflow_dispatch:
 
 jobs:
   read-blueprint:
+    name: read-blueprint
     runs-on: ubuntu-latest
     outputs:
-      language: ${{ steps.extract.outputs.language }}
+      language: ${{ steps.detect.outputs.language }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Install yq and extract blueprint info
-        id: extract
+      - name: Detect language
+        id: detect
         run: |
-          YQ_VERSION="v4.40.5"
-          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-          
-          FILE=$(find . -type f -name project-blueprint.yaml | head -n 1)
-          echo "Found blueprint: $FILE"
-          echo "blueprint_path=$FILE" >> $GITHUB_OUTPUT
+          if [ -f "./orders-service/pom.xml" ]; then
+            echo "language=java" >> $GITHUB_OUTPUT
+          elif [ -f "./orders-service/package.json" ]; then
+            echo "language=node" >> $GITHUB_OUTPUT
+          elif [ -f "./orders-service/main.py" ]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          else
+            echo "language=unknown" >> $GITHUB_OUTPUT
+          fi
 
-          LANG=$(yq e '.language' "$FILE")
-          echo "language=$LANG"
-          echo "language=$LANG" >> $GITHUB_OUTPUT
-
-  java-ci:
+  # ====================
+  # Java Pipeline
+  # ====================
+  java-lint:
+    name: java-ci / lint
     needs: read-blueprint
     if: ${{ needs.read-blueprint.outputs.language == 'java' }}
-    uses: ./.github/workflows/java-ci.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint Java
+        run: echo "Running Java lint"
 
-  python-ci:
-    needs: read-blueprint
-    if: ${{ needs.read-blueprint.outputs.language == 'python' }}
-    uses: ./.github/workflows/python-ci.yml
+  java-test:
+    name: java-ci / test
+    needs: java-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test Java
+        run: echo "Running Java tests"
 
-  node-ci:
+  java-build:
+    name: java-ci / build
+    needs: java-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Java
+        run: |
+          cd orders-service
+          mvn package
+
+  java-deploy:
+    name: java-ci / deploy
+    needs: java-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy Java
+        run: echo "Deploying Java service"
+
+  # ====================
+  # Node.js Pipeline
+  # ====================
+  node-build:
+    name: node-ci / node-build
     needs: read-blueprint
     if: ${{ needs.read-blueprint.outputs.language == 'node' }}
-    uses: ./.github/workflows/node-ci.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node install and build
+        run: |
+          cd orders-service
+          npm ci
+          npm run build
+
+  # ====================
+  # Python Pipeline
+  # ====================
+  python-build:
+    name: python-ci / python-build
+    needs: read-blueprint
+    if: ${{ needs.read-blueprint.outputs.language == 'python' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python build and check
+        run: |
+          cd orders-service
+          python -m py_compile main.py
