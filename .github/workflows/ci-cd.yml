@@ -18,22 +18,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Find project blueprint file
+      - name: Install yq and extract blueprint info
         id: extract
+      - name: Install yq
         run: |
+          YQ_VERSION: v4.40.5
+          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
           FILE=$(find . -type f -name project-blueprint.yaml | head -n 1)
           echo "Found blueprint: $FILE"
           echo "blueprint_path=$FILE" >> $GITHUB_OUTPUT
           LANG=$(yq e '.language' "$FILE")
           echo "language=$LANG" >> $GITHUB_OUTPUT
-        env:
-          YQ_VERSION: v4.40.5
-
-      - name: Install yq
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-
+        
   java-ci:
     needs: read-blueprint
     if: ${{ needs.read-blueprint.outputs.language == 'java' }}
